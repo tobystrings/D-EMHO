@@ -1,0 +1,762 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover, user-scalable=yes">
+  <title>VoltEstimate · Electrical Estimator Demo</title>
+  <style>
+    * {
+      box-sizing: border-box;
+      -webkit-tap-highlight-color: transparent;
+    }
+
+    body {
+      font-family: system-ui, -apple-system, 'Segoe UI', Roboto, 'Helvetica Neue', sans-serif;
+      background: #f1f5f9;
+      margin: 0;
+      padding: 16px;
+      color: #0f172a;
+    }
+
+    .app-container {
+      max-width: 1280px;
+      margin: 0 auto;
+    }
+
+    /* header */
+    .header {
+      margin-bottom: 20px;
+    }
+    .header h1 {
+      font-size: 1.8rem;
+      font-weight: 700;
+      margin: 0 0 4px 0;
+      background: linear-gradient(135deg, #1e3c72, #2b4f8c);
+      background-clip: text;
+      -webkit-background-clip: text;
+      color: transparent;
+      letter-spacing: -0.3px;
+    }
+    .badge {
+      font-size: 0.75rem;
+      background: #e2e8f0;
+      display: inline-block;
+      padding: 4px 10px;
+      border-radius: 30px;
+      color: #1e293b;
+    }
+
+    /* main grid: mobile first -> column, desktop row */
+    .dashboard {
+      display: flex;
+      flex-direction: column;
+      gap: 20px;
+    }
+
+    @media (min-width: 900px) {
+      .dashboard {
+        display: grid;
+        grid-template-columns: 1fr 1.2fr;
+        gap: 24px;
+      }
+    }
+
+    /* cards */
+    .card {
+      background: white;
+      border-radius: 24px;
+      box-shadow: 0 8px 20px rgba(0,0,0,0.05), 0 2px 4px rgba(0,0,0,0.02);
+      overflow: hidden;
+      transition: all 0.1s ease;
+    }
+
+    .card-header {
+      padding: 16px 18px;
+      background: #ffffff;
+      border-bottom: 1px solid #eef2f6;
+      font-weight: 600;
+      font-size: 1.2rem;
+      display: flex;
+      justify-content: space-between;
+      align-items: baseline;
+      flex-wrap: wrap;
+      gap: 8px;
+    }
+
+    .card-content {
+      padding: 16px;
+    }
+
+    /* material browser */
+    .search-box {
+      width: 100%;
+      padding: 12px 14px;
+      font-size: 1rem;
+      border: 1px solid #cbd5e1;
+      border-radius: 44px;
+      background: #fff;
+      margin-bottom: 16px;
+    }
+
+    .category-pills {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      margin-bottom: 18px;
+    }
+
+    .pill {
+      background: #f1f5f9;
+      border: none;
+      padding: 8px 16px;
+      border-radius: 40px;
+      font-size: 0.8rem;
+      font-weight: 500;
+      color: #1e293b;
+      cursor: pointer;
+      transition: 0.1s;
+    }
+
+    .pill.active {
+      background: #1e3c72;
+      color: white;
+      box-shadow: 0 2px 6px rgba(0,0,0,0.1);
+    }
+
+    .material-row {
+      display: flex;
+      flex-wrap: wrap;
+      align-items: center;
+      justify-content: space-between;
+      background: #fafcff;
+      border-bottom: 1px solid #ecf3fa;
+      padding: 12px 0;
+      gap: 8px;
+    }
+
+    .material-info {
+      flex: 3;
+      min-width: 140px;
+    }
+    .material-name {
+      font-weight: 600;
+      font-size: 0.95rem;
+    }
+    .material-meta {
+      font-size: 0.7rem;
+      color: #475569;
+      margin-top: 4px;
+    }
+    .material-price {
+      font-weight: 500;
+      color: #0f3b2c;
+    }
+    .material-actions {
+      display: flex;
+      gap: 10px;
+      align-items: center;
+      flex-wrap: wrap;
+    }
+    .qty-input {
+      width: 70px;
+      padding: 8px;
+      border-radius: 12px;
+      border: 1px solid #cbd5e1;
+      text-align: center;
+      font-size: 0.9rem;
+    }
+    .add-btn {
+      background: #2b6e3c;
+      border: none;
+      color: white;
+      padding: 8px 16px;
+      border-radius: 40px;
+      font-weight: 600;
+      font-size: 0.8rem;
+      cursor: pointer;
+      transition: 0.1s;
+      box-shadow: 0 1px 2px rgba(0,0,0,0.05);
+    }
+    .add-btn:active { background: #1f5430; transform: scale(0.97);}
+
+    /* takeoff table */
+    .takeoff-scroll {
+      max-height: 380px;
+      overflow-y: auto;
+    }
+    .takeoff-item {
+      display: flex;
+      flex-wrap: wrap;
+      align-items: center;
+      justify-content: space-between;
+      background: white;
+      border-bottom: 1px solid #eef2ff;
+      padding: 12px 0;
+      gap: 8px;
+    }
+    .takeoff-details {
+      flex: 2;
+    }
+    .takeoff-qty-control {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+    .qty-edit {
+      width: 65px;
+      padding: 8px;
+      border-radius: 12px;
+      border: 1px solid #cbd5e1;
+      text-align: center;
+    }
+    .remove-btn {
+      background: none;
+      border: none;
+      font-size: 1.3rem;
+      cursor: pointer;
+      color: #b91c1c;
+      padding: 6px 8px;
+    }
+    .totals-bar {
+      background: #f8fafc;
+      padding: 14px;
+      border-radius: 20px;
+      margin-top: 12px;
+      font-weight: 500;
+      display: flex;
+      justify-content: space-between;
+      flex-wrap: wrap;
+      gap: 10px;
+    }
+
+    /* estimate panel */
+    .summary-numbers {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 12px;
+      margin-bottom: 20px;
+    }
+    .stat-card {
+      background: #f0f9ff;
+      border-radius: 20px;
+      padding: 12px;
+      text-align: center;
+    }
+    .stat-label {
+      font-size: 0.7rem;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      color: #2c5f8a;
+    }
+    .stat-value {
+      font-size: 1.7rem;
+      font-weight: 800;
+      color: #0c4a6e;
+    }
+    .bid-total {
+      background: #e6f7ec;
+    }
+    .bid-total .stat-value {
+      color: #1f6e43;
+    }
+    .details-table {
+      width: 100%;
+      font-size: 0.8rem;
+      border-collapse: collapse;
+    }
+    .details-table td {
+      padding: 8px 0;
+      border-bottom: 1px dashed #e2e8f0;
+    }
+    .details-table td:last-child {
+      text-align: right;
+      font-weight: 500;
+    }
+    .params-collapse {
+      margin-top: 20px;
+      background: #f9f9fc;
+      border-radius: 20px;
+      padding: 12px;
+    }
+    .param-row {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 12px;
+      margin: 12px 0;
+      align-items: center;
+    }
+    .param-row label {
+      width: 110px;
+      font-size: 0.75rem;
+      font-weight: 500;
+    }
+    .param-row input, .param-row select {
+      flex: 1;
+      padding: 8px;
+      border-radius: 14px;
+      border: 1px solid #cbd5e1;
+      background: white;
+    }
+    button.outline {
+      background: white;
+      border: 1px solid #2563eb;
+      color: #2563eb;
+      padding: 8px 16px;
+      border-radius: 30px;
+      font-weight: 500;
+    }
+    hr {
+      margin: 16px 0;
+      border: none;
+      border-top: 1px solid #e2edf7;
+    }
+    .empty-state {
+      text-align: center;
+      color: #6c757d;
+      padding: 30px 16px;
+    }
+    @media (max-width: 550px) {
+      body { padding: 12px; }
+      .stat-value { font-size: 1.3rem; }
+    }
+  </style>
+</head>
+<body>
+<div class="app-container">
+  <div class="header">
+    <h1>⚡ VoltEstimate</h1>
+    <div class="badge">electrical estimator · demo mode</div>
+  </div>
+
+  <div class="dashboard">
+    <!-- LEFT PANEL: Material library -->
+    <div class="card">
+      <div class="card-header">
+        <span>📦 Material library</span>
+        <span style="font-size: 0.7rem; font-weight: normal;">tap + add to takeoff</span>
+      </div>
+      <div class="card-content">
+        <input type="text" id="searchInput" class="search-box" placeholder="🔍 Search conduit, wire, receptacles...">
+        <div id="categoryPills" class="category-pills"></div>
+        <div id="materialsList" style="max-height: 450px; overflow-y: auto;"></div>
+      </div>
+    </div>
+
+    <!-- RIGHT PANEL: Takeoff + Estimate -->
+    <div style="display: flex; flex-direction: column; gap: 20px;">
+      <!-- Takeoff section -->
+      <div class="card">
+        <div class="card-header">
+          <span>📋 Takeoff worksheet</span>
+          <span style="font-size: 0.7rem;">qty & remove</span>
+        </div>
+        <div class="card-content">
+          <div id="takeoffContainer" class="takeoff-scroll"></div>
+          <div id="takeoffTotals" class="totals-bar"></div>
+        </div>
+      </div>
+
+      <!-- Estimate summary + controls -->
+      <div class="card">
+        <div class="card-header">
+          <span>💰 Estimate summary</span>
+          <button id="recalcBtn" class="outline" style="padding: 4px 12px;">⟳ refresh</button>
+        </div>
+        <div class="card-content">
+          <div id="estimateSummaryArea">
+            <!-- dynamic summary injected -->
+          </div>
+          <details class="params-collapse">
+            <summary style="font-weight: 600; cursor: pointer; margin-bottom: 12px;">⚙️ Estimate parameters</summary>
+            <div class="param-row">
+              <label>Labor rate ($/hr)</label>
+              <input type="number" id="laborRate" value="85" step="1">
+            </div>
+            <div class="param-row">
+              <label>Tax rate (%)</label>
+              <input type="number" id="taxRate" value="8.5" step="0.5">
+            </div>
+            <div class="param-row">
+              <label>Markup (%)</label>
+              <input type="number" id="markupPct" value="15" step="1">
+            </div>
+            <div class="param-row">
+              <label>Overhead (%)</label>
+              <input type="number" id="overheadPct" value="10" step="1">
+            </div>
+            <div class="param-row">
+              <label>Profit (%)</label>
+              <input type="number" id="profitPct" value="8" step="1">
+            </div>
+            <div class="param-row">
+              <label>Risk buffer (%)</label>
+              <input type="number" id="riskBufferPct" value="3" step="1">
+            </div>
+            <div class="param-row">
+              <label>Complexity factor</label>
+              <input type="number" id="complexity" value="1.0" step="0.1" min="0.7" max="1.8">
+            </div>
+            <div class="param-row">
+              <label>Install type</label>
+              <select id="installType">
+                <option value="new">New construction</option>
+                <option value="retrofit">Retrofit</option>
+                <option value="industrial">Industrial</option>
+              </select>
+            </div>
+            <div class="param-row">
+              <label>Job type</label>
+              <select id="jobType">
+                <option value="residential">Residential</option>
+                <option value="light_commercial">Light Commercial</option>
+                <option value="heavy_commercial">Heavy Commercial</option>
+              </select>
+            </div>
+            <div class="param-row">
+              <label>Crew efficiency</label>
+              <input type="number" id="crewEfficiency" value="1.0" step="0.05" min="0.8" max="1.3">
+            </div>
+          </details>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+  // ---------- MATERIAL DATABASE (same as original backend mock) ----------
+  const MATERIALS = [
+    { id: 1, item_name: "3/4\" EMT Conduit", category: "Conduit", unit: "ft", material_cost: 1.85, labor_unit: 0.04, phase: "rough" },
+    { id: 2, item_name: "1\" EMT Conduit", category: "Conduit", unit: "ft", material_cost: 2.60, labor_unit: 0.055, phase: "rough" },
+    { id: 6, item_name: "#12 THHN Wire", category: "Wire", unit: "ft", material_cost: 0.18, labor_unit: 0.005, phase: "rough" },
+    { id: 13, item_name: "Single-Gang Device Box", category: "Boxes", unit: "ea", material_cost: 1.85, labor_unit: 0.20, phase: "rough" },
+    { id: 14, item_name: "4\" Round Ceiling Box", category: "Boxes", unit: "ea", material_cost: 2.40, labor_unit: 0.22, phase: "rough" },
+    { id: 15, item_name: "20A Duplex Receptacle", category: "Devices", unit: "ea", material_cost: 4.50, labor_unit: 0.35, phase: "trim" },
+    { id: 16, item_name: "20A Single-Pole Switch", category: "Devices", unit: "ea", material_cost: 3.75, labor_unit: 0.35, phase: "trim" },
+    { id: 17, item_name: "20A GFCI Receptacle", category: "Devices", unit: "ea", material_cost: 14.00, labor_unit: 0.45, phase: "trim" },
+    { id: 19, item_name: "Decora 1-Gang Wall Plate", category: "Devices", unit: "ea", material_cost: 0.65, labor_unit: 0.05, phase: "finish" },
+    { id: 25, item_name: "20A 1P Circuit Breaker", category: "Panels", unit: "ea", material_cost: 12.00, labor_unit: 0.50, phase: "service" },
+    { id: 27, item_name: "200A Main Panel 42-Space", category: "Panels", unit: "ea", material_cost: 380.00, labor_unit: 8.00, phase: "service" },
+    { id: 29, item_name: "4\" Recessed LED Downlight", category: "Lighting", unit: "ea", material_cost: 28.00, labor_unit: 0.75, phase: "finish" },
+    { id: 35, item_name: "Ground Rod 5/8\" x 8'", category: "Grounding", unit: "ea", material_cost: 18.00, labor_unit: 1.50, phase: "service" }
+  ];
+
+  // ----- Helper: labor multiplier logic (same as engine) -----
+  function laborMultiplier(params) {
+    const installFactors = { "new": 1.0, "retrofit": 1.3, "industrial": 1.15 };
+    const jobFactors = { "residential": 1.0, "light_commercial": 1.1, "heavy_commercial": 1.25 };
+    const install = params.installType || "new";
+    const job = params.jobType || "residential";
+    return params.complexityFactor * (installFactors[install] || 1.0) * (jobFactors[job] || 1.0) * params.crewEfficiency;
+  }
+
+  // ----- Estimate calculation engine -----
+  function calculateEstimate(takeoffItems, params) {
+    if (!takeoffItems.length) return null;
+    let totalMat = 0, totalLaborHrs = 0;
+    for (const item of takeoffItems) {
+      const qty = item.qty || 0;
+      totalMat += qty * (item.material_cost || 0);
+      totalLaborHrs += qty * (item.labor_unit || 0);
+    }
+    const laborFactor = laborMultiplier(params);
+    const effectiveHrs = totalLaborHrs * laborFactor;
+    const laborCost = effectiveHrs * params.laborRate;
+    const taxRate = params.taxRate || 0;
+    const matWithTax = totalMat * (1 + taxRate / 100);
+    const directCost = matWithTax + laborCost;
+    const markup = params.markupPct || 0;
+    const afterMarkup = directCost * (1 + markup / 100);
+    const overhead = afterMarkup * (params.overheadPct || 0) / 100;
+    const profit = afterMarkup * (params.profitPct || 0) / 100;
+    const risk = afterMarkup * (params.riskBufferPct || 0) / 100;
+    const baseTotal = afterMarkup + overhead + profit + risk;
+    // change orders omitted for mockup but can be extended
+    const finalTotal = baseTotal;
+    const grossMargin = finalTotal > 0 ? ((finalTotal - directCost) / finalTotal * 100) : 0;
+    return {
+      material_total: totalMat,
+      material_with_tax: matWithTax,
+      base_labor_hours: totalLaborHrs,
+      effective_labor_hours: effectiveHrs,
+      labor_factor: laborFactor,
+      labor_cost: laborCost,
+      direct_cost: directCost,
+      after_markup: afterMarkup,
+      overhead: overhead,
+      profit: profit,
+      risk_buffer: risk,
+      base_total: baseTotal,
+      final_total: finalTotal,
+      gross_margin: grossMargin
+    };
+  }
+
+  // ---------- APP STATE ----------
+  let takeoffItems = [];     // each item: { id, material_item_id, item_name, category, unit, material_cost, labor_unit, qty }
+  let nextId = 100;
+
+  // UI state
+  let currentCategory = "All";
+  let searchQuery = "";
+
+  // DOM elements
+  const materialsListDiv = document.getElementById("materialsList");
+  const categoryPillsDiv = document.getElementById("categoryPills");
+  const takeoffContainer = document.getElementById("takeoffContainer");
+  const takeoffTotalsDiv = document.getElementById("takeoffTotals");
+  const estimateSummaryArea = document.getElementById("estimateSummaryArea");
+  const recalcBtn = document.getElementById("recalcBtn");
+
+  // Parameter inputs
+  const laborRateInput = document.getElementById("laborRate");
+  const taxRateInput = document.getElementById("taxRate");
+  const markupPctInput = document.getElementById("markupPct");
+  const overheadPctInput = document.getElementById("overheadPct");
+  const profitPctInput = document.getElementById("profitPct");
+  const riskBufferInput = document.getElementById("riskBufferPct");
+  const complexityInput = document.getElementById("complexity");
+  const installTypeSelect = document.getElementById("installType");
+  const jobTypeSelect = document.getElementById("jobType");
+  const crewEfficiencyInput = document.getElementById("crewEfficiency");
+
+  function getCurrentParams() {
+    return {
+      laborRate: parseFloat(laborRateInput.value) || 85,
+      taxRate: parseFloat(taxRateInput.value) || 8.5,
+      markupPct: parseFloat(markupPctInput.value) || 15,
+      overheadPct: parseFloat(overheadPctInput.value) || 10,
+      profitPct: parseFloat(profitPctInput.value) || 8,
+      riskBufferPct: parseFloat(riskBufferInput.value) || 3,
+      complexityFactor: parseFloat(complexityInput.value) || 1.0,
+      installType: installTypeSelect.value,
+      jobType: jobTypeSelect.value,
+      crewEfficiency: parseFloat(crewEfficiencyInput.value) || 1.0
+    };
+  }
+
+  // Render material browser with filters
+  function renderMaterialBrowser() {
+    let filtered = MATERIALS.filter(m => {
+      if (currentCategory !== "All" && m.category !== currentCategory) return false;
+      if (searchQuery && !m.item_name.toLowerCase().includes(searchQuery.toLowerCase())) return false;
+      return true;
+    });
+    if (filtered.length === 0) {
+      materialsListDiv.innerHTML = `<div class="empty-state">🔍 No materials match</div>`;
+      return;
+    }
+    materialsListDiv.innerHTML = filtered.map(m => `
+      <div class="material-row">
+        <div class="material-info">
+          <div class="material-name">${escapeHtml(m.item_name)}</div>
+          <div class="material-meta">${m.category} · ${m.unit} · <span class="material-price">$${m.material_cost.toFixed(2)} ea</span> / labor ${m.labor_unit.toFixed(3)}h</div>
+        </div>
+        <div class="material-actions">
+          <input type="number" id="qty_${m.id}" class="qty-input" value="1" min="0.5" step="0.5">
+          <button class="add-btn" data-id="${m.id}" data-name="${escapeHtml(m.item_name)}" data-cat="${m.category}" data-unit="${m.unit}" data-mat="${m.material_cost}" data-labor="${m.labor_unit}">Add</button>
+        </div>
+      </div>
+    `).join('');
+    // attach event listeners to add buttons
+    document.querySelectorAll('.add-btn').forEach(btn => {
+      btn.addEventListener('click', (e) => {
+        const id = parseInt(btn.dataset.id);
+        const material = MATERIALS.find(m => m.id === id);
+        if (!material) return;
+        const qtyInput = document.getElementById(`qty_${id}`);
+        let qty = parseFloat(qtyInput.value);
+        if (isNaN(qty) || qty <= 0) qty = 1;
+        addToTakeoff(material, qty);
+      });
+    });
+  }
+
+  function addToTakeoff(material, qty) {
+    const existing = takeoffItems.find(item => item.material_item_id === material.id);
+    if (existing) {
+      existing.qty += qty;
+      if (existing.qty <= 0) existing.qty = 0.01;
+    } else {
+      takeoffItems.push({
+        id: nextId++,
+        material_item_id: material.id,
+        item_name: material.item_name,
+        category: material.category,
+        unit: material.unit,
+        material_cost: material.material_cost,
+        labor_unit: material.labor_unit,
+        qty: qty
+      });
+    }
+    renderTakeoffAndUpdate();
+  }
+
+  function updateTakeoffItemQuantity(itemId, newQty) {
+    const item = takeoffItems.find(i => i.id === itemId);
+    if (item) {
+      if (newQty <= 0) {
+        takeoffItems = takeoffItems.filter(i => i.id !== itemId);
+      } else {
+        item.qty = newQty;
+      }
+    }
+    renderTakeoffAndUpdate();
+  }
+
+  function removeTakeoffItem(itemId) {
+    takeoffItems = takeoffItems.filter(i => i.id !== itemId);
+    renderTakeoffAndUpdate();
+  }
+
+  function renderTakeoffAndUpdate() {
+    renderTakeoffTable();
+    updateTotalsBar();
+    updateEstimate();
+  }
+
+  function renderTakeoffTable() {
+    if (!takeoffItems.length) {
+      takeoffContainer.innerHTML = `<div class="empty-state">📭 No items added. Tap any material above.</div>`;
+      return;
+    }
+    takeoffContainer.innerHTML = takeoffItems.map(item => `
+      <div class="takeoff-item">
+        <div class="takeoff-details">
+          <strong>${escapeHtml(item.item_name)}</strong><br>
+          <span style="font-size:0.7rem;">${item.category} · $${item.material_cost.toFixed(2)} ea / ${item.labor_unit.toFixed(3)}h per unit</span>
+        </div>
+        <div class="takeoff-qty-control">
+          <input type="number" class="qty-edit" data-id="${item.id}" value="${item.qty}" step="0.5" min="0">
+          <button class="remove-btn" data-id="${item.id}" title="remove">✕</button>
+        </div>
+      </div>
+    `).join('');
+    // attach qty change
+    document.querySelectorAll('.qty-edit').forEach(input => {
+      input.addEventListener('change', (e) => {
+        const id = parseInt(input.dataset.id);
+        const newVal = parseFloat(input.value);
+        if (!isNaN(newVal)) updateTakeoffItemQuantity(id, newVal);
+        else renderTakeoffAndUpdate();
+      });
+    });
+    document.querySelectorAll('.remove-btn').forEach(btn => {
+      btn.addEventListener('click', (e) => {
+        const id = parseInt(btn.dataset.id);
+        removeTakeoffItem(id);
+      });
+    });
+  }
+
+  function updateTotalsBar() {
+    if (!takeoffItems.length) {
+      takeoffTotalsDiv.innerHTML = `<span>📊 Total material: $0.00</span><span>⏱️ Labor hours: 0.00</span>`;
+      return;
+    }
+    let totalMat = 0, totalLabor = 0;
+    for (const item of takeoffItems) {
+      totalMat += item.qty * item.material_cost;
+      totalLabor += item.qty * item.labor_unit;
+    }
+    takeoffTotalsDiv.innerHTML = `<span>🧾 Material total: <strong>$${totalMat.toFixed(2)}</strong></span><span>⚡ Raw labor hours: <strong>${totalLabor.toFixed(2)}h</strong></span>`;
+  }
+
+  function updateEstimate() {
+    const params = getCurrentParams();
+    const result = calculateEstimate(takeoffItems, params);
+    if (!result) {
+      estimateSummaryArea.innerHTML = `<div class="empty-state">✨ Add takeoff items to see instant estimate</div>`;
+      return;
+    }
+    const markupApplied = ((result.after_markup / result.direct_cost - 1) * 100).toFixed(0);
+    const taxAmount = (result.material_with_tax - result.material_total).toFixed(2);
+    estimateSummaryArea.innerHTML = `
+      <div class="summary-numbers">
+        <div class="stat-card"><div class="stat-label">Material (incl. tax)</div><div class="stat-value">$${result.material_with_tax.toFixed(2)}</div></div>
+        <div class="stat-card"><div class="stat-label">Labor cost</div><div class="stat-value">$${result.labor_cost.toFixed(2)}</div></div>
+        <div class="stat-card"><div class="stat-label">Direct cost</div><div class="stat-value">$${result.direct_cost.toFixed(2)}</div></div>
+        <div class="stat-card bid-total"><div class="stat-label">💰 FINAL BID</div><div class="stat-value">$${result.final_total.toFixed(2)}</div></div>
+      </div>
+      <details open style="margin-top: 6px;">
+        <summary style="font-weight:500; margin-bottom: 8px; cursor:pointer;">📑 detailed breakdown</summary>
+        <table class="details-table">
+          <tr><td>Raw material</td><td>$${result.material_total.toFixed(2)}</td></tr>
+          <tr><td>Tax (${((result.material_with_tax/result.material_total -1)*100).toFixed(1)}%)</td><td>$${taxAmount}</td></tr>
+          <tr><td>Base labor hours</td><td>${result.base_labor_hours.toFixed(2)} h</td></tr>
+          <tr><td>Labor factor (multiplier)</td><td>${result.labor_factor.toFixed(2)}x</td></tr>
+          <tr><td>Effective labor hours</td><td>${result.effective_labor_hours.toFixed(2)} h</td></tr>
+          <tr><td>After markup (${markupApplied}%)</td><td>$${result.after_markup.toFixed(2)}</td></tr>
+          <tr><td>Overhead</td><td>$${result.overhead.toFixed(2)}</td></tr>
+          <tr><td>Profit</td><td>$${result.profit.toFixed(2)}</td></tr>
+          <tr><td>Risk buffer</td><td>$${result.risk_buffer.toFixed(2)}</td></tr>
+          <tr style="border-top:1px solid #ccc;"><td><strong>GROSS MARGIN</strong></td><td><strong>${result.gross_margin.toFixed(1)}%</strong></td></tr>
+        </table>
+      </details>
+    `;
+  }
+
+  // category pills render
+  function renderCategories() {
+    const categories = ["All", ...new Set(MATERIALS.map(m => m.category))];
+    categoryPillsDiv.innerHTML = categories.map(cat => `
+      <button class="pill ${currentCategory === cat ? 'active' : ''}" data-cat="${cat}">${cat}</button>
+    `).join('');
+    document.querySelectorAll('.pill').forEach(btn => {
+      btn.addEventListener('click', (e) => {
+        currentCategory = btn.dataset.cat;
+        renderCategories();
+        renderMaterialBrowser();
+      });
+    });
+  }
+
+  function escapeHtml(str) {
+    if (!str) return '';
+    return str.replace(/[&<>]/g, function(m) {
+      if (m === '&') return '&amp;';
+      if (m === '<') return '&lt;';
+      if (m === '>') return '&gt;';
+      return m;
+    });
+  }
+
+  // Setup search listener & parameter changes
+  function bindEvents() {
+    const searchInput = document.getElementById("searchInput");
+    searchInput.addEventListener('input', (e) => {
+      searchQuery = e.target.value;
+      renderMaterialBrowser();
+    });
+    const paramInputs = [laborRateInput, taxRateInput, markupPctInput, overheadPctInput, profitPctInput, riskBufferInput, complexityInput, installTypeSelect, jobTypeSelect, crewEfficiencyInput];
+    paramInputs.forEach(inp => {
+      inp.addEventListener('input', () => updateEstimate());
+      inp.addEventListener('change', () => updateEstimate());
+    });
+    recalcBtn.addEventListener('click', () => updateEstimate());
+  }
+
+  // init demo with a couple of preloaded items to show UI instantly
+  function seedDemoItems() {
+    if (takeoffItems.length === 0) {
+      const sampleConduit = MATERIALS.find(m => m.id === 1);
+      const sampleWire = MATERIALS.find(m => m.id === 6);
+      const sampleBox = MATERIALS.find(m => m.id === 13);
+      if (sampleConduit) addToTakeoff(sampleConduit, 120);
+      if (sampleWire) addToTakeoff(sampleWire, 500);
+      if (sampleBox) addToTakeoff(sampleBox, 8);
+    }
+  }
+
+  function init() {
+    renderCategories();
+    renderMaterialBrowser();
+    bindEvents();
+    seedDemoItems();   // initial items so estimate shows something attractive
+    renderTakeoffAndUpdate();
+  }
+
+  init();
+</script>
+</body>
+</html>
